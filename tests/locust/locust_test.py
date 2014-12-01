@@ -92,8 +92,9 @@ class DeuceTasks(TaskSet):
             payload = util.msgpacked_payload(COMMON_BLOCKS)
             self._upload_blocks(payload)
         self.firstrun = False
-        payload = util.msgpacked_payload(self.new_blocks)
-        self._upload_blocks(payload)
+        if len(self.new_blocks):
+            payload = util.msgpacked_payload(self.new_blocks)
+            self._upload_blocks(payload)
 
         self._finalize_file()
 
