@@ -1,9 +1,13 @@
-from locust import HttpLocust, TaskSet, task
+from locust import HttpLocust, TaskSet, task, events
+
+from logging.handlers import RotatingFileHandler
 
 import config
 import gen_dataset
+import logging
 import random
 import threading
+import time
 import util
 
 # load cfg
@@ -27,6 +31,34 @@ FILE_SIZE = NUM_BLOCKS * B_SIZE
 auth_token = 'token'
 project_id = 'tenantid'
 lock1 = threading.Lock()
+
+# logging
+BACKUP_COUNT = 20
+MAX_LOG_BYTES = 1024 * 1024 * 20
+LOG_FILENAME = 'locust_test.log'
+
+success_handler = RotatingFileHandler(filename=LOG_FILENAME,
+                                      maxBytes=MAX_LOG_BYTES,
+                                      backupCount=BACKUP_COUNT,
+                                      delay=1)
+
+formatter = logging.Formatter(
+    '%(asctime)s | %(name)s | %(levelname)s | %(message)s')
+formatter.converter = time.gmtime
+success_handler.setFormatter(formatter)
+
+success_logger = logging.getLogger('request.success')
+success_logger.propagate = False
+success_logger.addHandler(success_handler)
+
+
+def success_request(request_type, name, response_time, response_length):
+    msg = ' | '.join([str(request_type), name, str(response_time),
+                     str(response_length)])
+    success_logger.info(msg)
+
+
+events.request_success += success_request
 
 
 class DeuceTasks(TaskSet):
