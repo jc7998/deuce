@@ -120,7 +120,7 @@ class DeuceTasks(TaskSet):
 
         self._set_headers()
         self.client.put('/v1.0/vaults/{0}'.format(self.vaultname),
-                name='/v1.0/vaults/[vaultid]')
+                name='Create Vault')
 
     def _create_file(self):
         """Create a file"""
@@ -128,7 +128,7 @@ class DeuceTasks(TaskSet):
         self._set_headers()
         resp = self.client.post(
             '/v1.0/vaults/{0}/files'.format(self.vaultname),
-            name='/v1.0/vaults/[vaultid]/files')
+            name='Create File')
         return resp.headers['location'], resp.headers['x-file-id']
 
     def _assign_blocks(self, payload):
@@ -139,7 +139,7 @@ class DeuceTasks(TaskSet):
             '/v1.0/vaults/{0}/files/{1}/blocks'
             ''.format(self.vaultname, self.file_id),
             data=payload,
-            name='/v1.0/vaults/[vaultid]/files/[fileid]/blocks')
+            name='Assign Blocks')
 
     def _upload_blocks(self, payload):
         """Upload blocks using msgpack"""
@@ -148,7 +148,7 @@ class DeuceTasks(TaskSet):
         resp = self.client.post(
             '/v1.0/vaults/{0}/blocks'.format(self.vaultname),
             data=payload,
-            name='/v1.0/vaults/[vaultid]/blocks')
+            name='Upload Blocks')
 
     def _finalize_file(self, incomplete=False):
         """Finalize the file"""
@@ -159,7 +159,7 @@ class DeuceTasks(TaskSet):
             with self.client.post(
                     '/v1.0/vaults/{0}/files/{1}'
                     ''.format(self.vaultname, self.file_id),
-                    name='/v1.0/vaults/[vaultid]/files/[fileid]',
+                    name='Finalize File (409 Fail)',
                     catch_response=incomplete) as resp:
                 if resp.status_code == 409:
                     resp.success()
@@ -169,7 +169,7 @@ class DeuceTasks(TaskSet):
             resp = self.client.post(
                 '/v1.0/vaults/{0}/files/{1}'
                 ''.format(self.vaultname, self.file_id),
-                name='/v1.0/vaults/[vaultid]/files/[fileid]')
+                name='Finalize File (Success)')
 
     def _token(self):
         """Request token and project id information"""
