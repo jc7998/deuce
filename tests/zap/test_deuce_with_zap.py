@@ -5,6 +5,7 @@ import time
 
 from zapv2 import ZAPv2
 
+
 class TestZAP(base.TestBase):
 
     def setUp(self):
@@ -64,7 +65,6 @@ class TestZAP(base.TestBase):
         self.client.delete_block(self.vaultname, self.blockid)
         self.client.delete_file(self.vaultname, self.fileid)
 
-
     def test_zap(self):
 
         # Do an Active Scan on the main Deuce Url
@@ -73,7 +73,7 @@ class TestZAP(base.TestBase):
         while int(self.zap.ascan.status) < 100:
             print('Scan progress {0}'.format(self.zap.ascan.status))
             time.sleep(5)
-        print('Scan completed')    
+        print('Scan completed')
         alerts = self.zap.core.alerts()
 
         # check against baseline
