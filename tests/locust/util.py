@@ -41,14 +41,7 @@ def auth_token(payload):
 def project_id(payload):
     """Return project id"""
 
-    tenantid = None
-    for entry in payload['access']['serviceCatalog']:
-        if entry['type'] == 'object-store':
-            endpoints = entry['endpoints']
-            for endpoint in endpoints:
-                tenantid = endpoint['tenantId']
-            break
-    return tenantid
+    return payload['access']['token']['tenant']['id']
 
 
 def deuce_assign_block(list_blocks, size):
