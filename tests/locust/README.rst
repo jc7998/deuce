@@ -73,7 +73,9 @@ Generating a report
 ###################
 
 You can generate a graphical report using the scripts available in:
+
     http://killera.github.io/test/2013/12/23/using-matplotlib-to-analyse-locust-performance-test-results/
+
     https://github.com/killera/python-foo-bar/tree/master/scientific_computation_and_visualization/exercises
 
 **Note:** You will have to modify the script locust_trend.py to point to the correct logfile
