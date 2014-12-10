@@ -1,4 +1,5 @@
 from tests.api import base
+import config
 
 import os
 import time
@@ -10,13 +11,15 @@ class TestZAP(base.TestBase):
 
     def setUp(self):
         super(TestZAP, self).setUp()
+        cfg = config.ZapConfig()
+
         # Configure ZAP
         self.http_proxy = os.environ.get('HTTP_PROXY')
-        os.environ['HTTP_PROXY'] = 'http://127.0.0.1:8080'
+        os.environ['HTTP_PROXY'] = cfg.proxy_url
         self.zap = ZAPv2()
         self.zap.ascan.enable_all_scanners()
         # self.zap.ascan.set_option_attack_strength('INSANE')
-        self.zap.ascan.set_option_attack_strength('HIGH')
+        self.zap.ascan.set_option_attack_strength(cfg.attack_level)
         for policy in self.zap.ascan.policies:
             if policy['enabled'] != 'true':
                 self.zap.ascan.set_enabled_policies([policy['id']])
@@ -88,3 +91,5 @@ class TestZAP(base.TestBase):
             del os.environ['HTTP_PROXY']
         else:
             os.environ['HTTP_PROXY'] = self.http_proxy
+        # shutdown ZAP
+        self.zap.core.shutdown()
