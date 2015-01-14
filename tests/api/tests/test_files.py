@@ -106,6 +106,31 @@ class TestFileBlockUploaded(base.TestBase):
 
         self.assertListEqual(resp_body, [blockid])
 
+    def test_assign_block_response_without_duplicates(self):
+        """Assign (duplicate) blocks to a file.
+        The response should only list unique blocks"""
+
+        for _ in range(2):
+            self.generate_block_data()
+        block_list = list()
+        index = 0
+        self.blocks += self.blocks
+        for block in self.blocks:
+            block_list.append([block.Id, index])
+            index += len(block.Data)
+
+        resp = self.client.assign_to_file(json.dumps(block_list),
+                                          alternate_url=self.fileurl)
+
+        self.assert_200_response(resp)
+
+        resp_body = resp.json()
+        jsonschema.validate(resp_body, deuce_schema.block_list)
+
+        self.assertEqual(2, len(resp_body))
+        self.assertIn(self.blocks[1].Id, resp_body)
+        self.assertIn(self.blocks[2].Id, resp_body)
+
     def tearDown(self):
         super(TestFileBlockUploaded, self).tearDown()
         [self.client.delete_file(vaultname=self.vaultname,
