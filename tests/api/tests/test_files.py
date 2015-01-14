@@ -192,6 +192,56 @@ class TestFileAssignedBlocks(base.TestBase):
         resp = self.client.delete_file(self.vaultname, self.fileid)
         self.assert_204_response(resp)
 
+    def test_finalize_file_without_filesize(self):
+        """Finalize a file without sending a file size"""
+
+        resp = self.client.finalize_file(filesize=-1,
+                                         alternate_url=self.fileurl)
+        self.assert_409_response(resp)
+
+        resp_body = resp.json()
+        jsonschema.validate(resp_body, deuce_schema.error)
+
+        self.assertEqual(resp_body['title'], 'Conflict')
+        self.assertEqual(resp_body['description'],
+                '"(\'Missing header\', \'The "x-file-length" header is '
+                'required.\')"')
+
+    def test_finalize_file_filesize_gap(self):
+        """Finalize a file with a file size that is larger than expected"""
+
+        resp = self.client.finalize_file(filesize=self.filesize + 100,
+                                         alternate_url=self.fileurl)
+        self.assert_409_response(resp)
+
+        # The response will only list the first missing block
+        resp_body = resp.json()
+        jsonschema.validate(resp_body, deuce_schema.error)
+
+        expected = '"[{0}\\\\{1}] Gap in file {2} from {3}-{4}"'
+        self.assertEqual(resp_body['title'], 'Conflict')
+        self.assertEqual(resp_body['description'], expected.format(
+            self.client.default_headers['X-Project-Id'], self.vaultname,
+            self.fileid, self.filesize, self.filesize + 100))
+
+    def test_finalize_file_filesize_overlap(self):
+        """Finalize a file with a file size that is smaller than expected"""
+
+        resp = self.client.finalize_file(filesize=self.filesize - 100,
+                                         alternate_url=self.fileurl)
+        self.assert_409_response(resp)
+
+        # The response will only list the first overlapping block
+        resp_body = resp.json()
+        jsonschema.validate(resp_body, deuce_schema.error)
+
+        expected = '"[{0}/{1}] Overlap at block {2} file {3} at [{4}-{5}]"'
+        self.assertEqual(resp_body['title'], 'Conflict')
+        self.assertEqual(resp_body['description'], expected.format(
+            self.client.default_headers['X-Project-Id'], self.vaultname,
+            self.filesize - 100, self.fileid, self.filesize - 100,
+            self.filesize))
+
     def tearDown(self):
         super(TestFileAssignedBlocks, self).tearDown()
         [self.client.delete_file(vaultname=self.vaultname,
