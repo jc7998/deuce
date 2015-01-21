@@ -334,12 +334,19 @@ class TestListStorageBlocks(base.TestBase):
         blockid = sha.new(self.id_generator(15)).hexdigest()
         st_id = uuid.uuid5(uuid.NAMESPACE_URL, self.id_generator(50))
         bad_storageid = '{0}_{1}'.format(blockid, st_id)
+
+        storageids = self.storageids[:]
+        storageids.append(bad_storageid)
+        storageids.sort()
+        i = storageids.index(bad_storageid)
+
         resp = self.client.list_of_storage_blocks(self.vaultname,
                 marker=bad_storageid)
-        self.assert_200_response(resp)
 
+        self.assert_200_response(resp)
         resp_body = resp.json()
-        self.assertEqual(resp_body, [])
+        jsonschema.validate(resp_body, deuce_schema.block_storage_list)
+        self.assertEqual(resp_body, storageids[i + 1:])
 
     def tearDown(self):
         super(TestListStorageBlocks, self).tearDown()
