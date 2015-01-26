@@ -1,7 +1,7 @@
 import uuid
 
 from cafe.engine.http import client
-from tests.api.utils.models import auth_requests, auth_response
+from .models import auth_requests, auth_response
 
 
 class AuthClient(client.AutoMarshallingHTTPClient):
@@ -25,8 +25,7 @@ class AuthClient(client.AutoMarshallingHTTPClient):
         """
         request_obj = auth_requests.AuthUsernameApiKey(username, api_key)
         resp = self.request('POST', self.url + '/tokens',
-                            request_entity=request_obj,
-                            response_entity_type=auth_response.AuthToken)
+                            request_entity=request_obj)
         return resp
 
 

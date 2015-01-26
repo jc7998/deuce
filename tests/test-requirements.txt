@@ -3,4 +3,4 @@ nose
 ddt
 jsonschema
 msgpack-python
-opencafe
+git+https://github.com/stackforge/opencafe.git#egg=opencafe

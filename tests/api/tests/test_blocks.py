@@ -2,10 +2,10 @@ from tests.api import base
 from tests.api.utils.schema import deuce_schema
 
 import ddt
+import hashlib
 import jsonschema
 import msgpack
 import os
-import sha
 import time
 
 
@@ -33,7 +33,7 @@ class TestNoBlocksUploaded(base.TestBase):
         """Get a block that has not been uploaded"""
 
         self.block_data = os.urandom(100)
-        self.blockid = sha.new(self.block_data).hexdigest()
+        self.blockid = hashlib.new('sha1', self.block_data).hexdigest()
         resp = self.client.get_block(self.vaultname, self.blockid)
         self.assert_404_response(resp)
 
@@ -41,7 +41,7 @@ class TestNoBlocksUploaded(base.TestBase):
         """Head a block that has not been uploaded"""
 
         self.block_data = os.urandom(100)
-        self.blockid = sha.new(self.block_data).hexdigest()
+        self.blockid = hashlib.new('sha1', self.block_data).hexdigest()
         resp = self.client.block_head(self.vaultname, self.blockid)
         self.assert_404_response(resp, skip_contentlength=True)
 
@@ -56,7 +56,7 @@ class TestNoBlocksUploaded(base.TestBase):
         """Upload a block with a wrong blockid"""
 
         self.generate_block_data()
-        bad_blockid = sha.new('bad').hexdigest()
+        bad_blockid = hashlib.new('sha1', 'bad'.encode('utf-8')).hexdigest()
         resp = self.client.upload_block(self.vaultname, bad_blockid,
                                         self.block_data)
         self.assert_412_response(resp)
@@ -71,7 +71,7 @@ class TestNoBlocksUploaded(base.TestBase):
         """Upload a block with a wrong blockid"""
 
         self.generate_block_data()
-        bad_blockid = sha.new('bad').hexdigest()
+        bad_blockid = hashlib.new('sha1', 'bad'.encode('utf-8')).hexdigest()
         data = dict([(bad_blockid, self.block_data)])
         msgpacked_data = msgpack.packb(data)
         resp = self.client.upload_multiple_blocks(self.vaultname,
@@ -333,7 +333,7 @@ class TestListBlocks(base.TestBase):
         """
 
         url = None
-        for i in range(20 / value - pages):
+        for i in range(int(20 / value) - pages):
             if not url:
                 resp = self.client.list_of_blocks(self.vaultname,
                                                   marker=marker, limit=value)
@@ -342,7 +342,7 @@ class TestListBlocks(base.TestBase):
 
             self.assert_200_response(resp)
 
-            if i < 20 / value - (1 + pages):
+            if i < int(20 / value) - (1 + pages):
                 self.assertIn('x-next-batch', resp.headers)
                 url = resp.headers['x-next-batch']
                 self.assertUrl(url, blocks=True, nextlist=True)
@@ -373,7 +373,8 @@ class TestListBlocks(base.TestBase):
         """Request a Block List with a bad marker.
         The marker is correctly formatted, but does not exist"""
 
-        bad_marker = sha.new(self.id_generator(50)).hexdigest()
+        bad_marker = hashlib.new('sha1', self.id_generator(50).encode(
+            'utf-8')).hexdigest()
         blockids = self.blockids[:]
         blockids.append(bad_marker)
         blockids.sort()

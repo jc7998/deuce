@@ -2,9 +2,9 @@ from tests.api import base
 from tests.api.utils.schema import deuce_schema
 
 import ddt
+import hashlib
 import jsonschema
 import os
-import sha
 import uuid
 
 
@@ -18,7 +18,8 @@ class TestNoBlocksUploaded(base.TestBase):
     def test_get_missing_storage_block(self):
         """Get a storage block that has not been uploaded"""
 
-        blockid = sha.new(self.id_generator(15)).hexdigest()
+        blockid = hashlib.new('sha1',
+                self.id_generator(15).encode('utf-8')).hexdigest()
         st_id = uuid.uuid5(uuid.NAMESPACE_URL, self.id_generator(50))
         storageid = '{0}_{1}'.format(blockid, st_id)
         resp = self.client.get_storage_block(self.vaultname, storageid)
@@ -27,7 +28,8 @@ class TestNoBlocksUploaded(base.TestBase):
     def test_head_missing_storage_block(self):
         """Head a block that has not been uploaded"""
 
-        blockid = sha.new(self.id_generator(15)).hexdigest()
+        blockid = hashlib.new('sha1',
+                self.id_generator(15).encode('utf-8')).hexdigest()
         st_id = uuid.uuid5(uuid.NAMESPACE_URL, self.id_generator(50))
         storageid = '{0}_{1}'.format(blockid, st_id)
         resp = self.client.storage_block_head(self.vaultname, storageid)
@@ -38,7 +40,8 @@ class TestNoBlocksUploaded(base.TestBase):
         Block not present in metadata"""
 
         self.generate_block_data()
-        blockid = sha.new(self.id_generator(15)).hexdigest()
+        blockid = hashlib.new('sha1',
+                self.id_generator(15).encode('utf-8')).hexdigest()
         st_id = uuid.uuid5(uuid.NAMESPACE_URL, self.id_generator(50))
         storageid = '{0}_{1}'.format(blockid, st_id)
         resp = self.client.upload_storage_block(self.vaultname, storageid,
@@ -60,7 +63,8 @@ class TestNoBlocksUploaded(base.TestBase):
     def test_delete_missing_storage_block(self):
         """Delete a storage block that has not been uploaded"""
 
-        blockid = sha.new(self.id_generator(15)).hexdigest()
+        blockid = hashlib.new('sha1',
+                self.id_generator(15).encode('utf-8')).hexdigest()
         st_id = uuid.uuid5(uuid.NAMESPACE_URL, self.id_generator(50))
         storageid = '{0}_{1}'.format(blockid, st_id)
         resp = self.client.delete_storage_block(self.vaultname, storageid)
@@ -291,7 +295,7 @@ class TestListStorageBlocks(base.TestBase):
         """
 
         url = None
-        for i in range(20 / value - pages):
+        for i in range(int(20 / value) - pages):
             if not url:
                 resp = self.client.list_of_storage_blocks(self.vaultname,
                                                   marker=marker, limit=value)
@@ -300,7 +304,7 @@ class TestListStorageBlocks(base.TestBase):
 
             self.assert_200_response(resp)
 
-            if i < 20 / value - (1 + pages):
+            if i < int(20 / value) - (1 + pages):
                 self.assertIn('x-next-batch', resp.headers)
                 url = resp.headers['x-next-batch']
                 self.assertUrl(url, storage=True, nextlist=True)
@@ -323,7 +327,8 @@ class TestListStorageBlocks(base.TestBase):
     def test_list_storage_blocks_invalid_marker(self):
         """Request a Storage Block List with an invalid marker"""
 
-        bad_marker = sha.new(self.id_generator(50)).hexdigest()
+        bad_marker = hashlib.new('sha1',
+                self.id_generator(50).encode('utf-8')).hexdigest()
         resp = self.client.list_of_storage_blocks(self.vaultname,
                 marker=bad_marker)
         self.assert_404_response(resp)
@@ -331,7 +336,8 @@ class TestListStorageBlocks(base.TestBase):
     def test_list_storage_blocks_bad_marker(self):
         """Request a Storage Block List with a bad marker"""
 
-        blockid = sha.new(self.id_generator(15)).hexdigest()
+        blockid = hashlib.new('sha1',
+                self.id_generator(15).encode('utf-8')).hexdigest()
         st_id = uuid.uuid5(uuid.NAMESPACE_URL, self.id_generator(50))
         bad_storageid = '{0}_{1}'.format(blockid, st_id)
         resp = self.client.list_of_storage_blocks(self.vaultname,

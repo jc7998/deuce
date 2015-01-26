@@ -3,8 +3,12 @@ from tests.api.utils.schema import deuce_schema
 
 import ddt
 import jsonschema
-import urlparse
 import time
+
+try:
+    import urllib.parse as urlparse
+except ImportError:
+    import urlparse
 
 
 class TestNoVaultsCreated(base.TestBase):

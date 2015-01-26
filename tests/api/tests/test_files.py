@@ -2,11 +2,12 @@ from tests.api import base
 from tests.api.utils.schema import deuce_schema
 
 import ddt
+import hashlib
 import json
 import jsonschema
 import os
 import random
-import sha
+import sys
 import uuid
 
 
@@ -92,7 +93,7 @@ class TestFileBlockUploaded(base.TestBase):
         """Assign a missing block to a file"""
 
         block_data = os.urandom(30720)
-        blockid = sha.new(block_data).hexdigest()
+        blockid = hashlib.new('sha1', block_data).hexdigest()
         block_list = list()
         block_list.append([blockid, 0])
 
@@ -267,7 +268,7 @@ class TestFileOverlappingBlock(base.TestBase):
         self.assertEqual(resp_body['title'], 'Conflict')
         self.assertEqual(resp_body['description'], expected.format(
             self.client.default_headers['X-Project-Id'], self.vaultname,
-            self.blocks[1].Id, self.fileid, 30720 / 2, 30720))
+            self.blocks[1].Id, self.fileid, int(30720 / 2), 30720))
 
     def tearDown(self):
         super(TestFileOverlappingBlock, self).tearDown()
@@ -350,7 +351,7 @@ class TestListBlocksOfFile(base.TestBase):
         """
 
         url = None
-        for i in range(20 / value - pages):
+        for i in range(int(20 / value) - pages):
             if not url:
                 resp = self.client.list_of_blocks_in_file(self.vaultname,
                                                           self.fileid,
@@ -361,7 +362,7 @@ class TestListBlocksOfFile(base.TestBase):
 
             self.assert_200_response(resp)
 
-            if i < 20 / value - (1 + pages):
+            if i < int(20 / value) - (1 + pages):
                 self.assertIn('x-next-batch', resp.headers)
                 url = resp.headers['x-next-batch']
                 self.assertUrl(url, fileblock=True, nextlist=True)
@@ -449,9 +450,14 @@ class TestFinalizedFile(base.TestBase):
                          'Expected 200'.format(resp.status_code))
         self.assertHeaders(resp.headers, binary=True,
                            contentlength=self.filesize)
-        filedata = ''
-        for block in self.blocks:
-            filedata += block.Data
+        if sys.version_info[0] > 2:
+            filedata = bytearray()
+            for block in self.blocks:
+                filedata.extend(block.Data)
+        else:
+            filedata = ''
+            for block in self.blocks:
+                filedata += block.Data
         self.assertEqual(resp.content, filedata,
                          'Content of the file does not match was was expected')
 
@@ -566,7 +572,7 @@ class TestMultipleFinalizedFiles(base.TestBase):
         """
 
         url = None
-        for i in range(20 / value - pages):
+        for i in range(int(20 / value) - pages):
             if not url:
                 resp = self.client.list_of_files(self.vaultname,
                                                  marker=marker, limit=value)
@@ -575,7 +581,7 @@ class TestMultipleFinalizedFiles(base.TestBase):
 
             self.assert_200_response(resp)
 
-            if i < 20 / value - (1 + pages):
+            if i < int(20 / value) - (1 + pages):
                 self.assertIn('x-next-batch', resp.headers)
                 url = resp.headers['x-next-batch']
                 self.assertUrl(url, files=True, nextlist=True)

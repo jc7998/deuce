@@ -1,22 +1,26 @@
 from cafe.drivers.unittest import fixtures
-from utils import config
-from utils import client
-from utils.schema import auth
-from utils.schema import deuce_schema
+from .utils import config
+from .utils import client
+from .utils.schema import auth
+from .utils.schema import deuce_schema
 
 from collections import namedtuple
 
 import base64
+import hashlib
 import json
 import jsonschema
 import msgpack
 import os
 import random
 import re
-import sha
 import string
 import time
-import urlparse
+
+try:
+    import urllib.parse as urlparse
+except ImportError:
+    import urlparse
 
 Block = namedtuple('Block', 'Id Data')
 File = namedtuple('File', 'Id Url')
@@ -47,13 +51,15 @@ class TestBase(fixtures.BaseTestFixture):
             cls.a_resp = cls.a_client.get_auth_token(cls.auth_config.user_name,
                                                      cls.auth_config.api_key)
             jsonschema.validate(cls.a_resp.json(), auth.authentication)
-            cls.auth_token = cls.a_resp.entity.token
+            resp = cls.a_resp.json()
+            cls.auth_token = resp['access']['token']['id']
 
-            cls.tenantid = cls.a_resp.entity.tenantid
+            cls.tenantid = resp['access']['token']['tenant']['id']
             url_type = 'internalURL' if cls.storage_config.internal_url \
                 else 'publicURL'
             if cls.auth_config.use_service_catalog:
-                cls.service_catalog_b64 = base64.b64encode(cls.a_resp.content)
+                cls.service_catalog_b64 = base64.b64encode(
+                    cls.a_resp.text.encode('utf-8'))
         cls.client = client.BaseDeuceClient(cls.config.base_url,
                                             cls.config.version,
                                             cls.auth_token,
@@ -86,14 +92,19 @@ class TestBase(fixtures.BaseTestFixture):
         super(TestBase, self).setUp()
 
     def tearDown(self):
-        if any(r for r in self._resultForDoCleanups.failures
-               if self._custom_test_name_matches_result(self._testMethodName,
-                                                        r)):
-            self._reporter.stop_test_metrics(self._testMethodName, 'Failed')
-        elif any(r for r in self._resultForDoCleanups.errors
-                 if self._custom_test_name_matches_result(self._testMethodName,
-                                                          r)):
-            self._reporter.stop_test_metrics(self._testMethodName, 'ERRORED')
+        if hasattr(self, '_resultForDoCleanups'):
+            if any(r for r in self._resultForDoCleanups.failures
+                   if self._custom_test_name_matches_result(
+                       self._testMethodName, r)):
+                self._reporter.stop_test_metrics(self._testMethodName,
+                                                 'Failed')
+            elif any(r for r in self._resultForDoCleanups.errors
+                     if self._custom_test_name_matches_result(
+                         self._testMethodName, r)):
+                self._reporter.stop_test_metrics(self._testMethodName,
+                                                 'ERRORED')
+            else:
+                super(TestBase, self).tearDown()
         else:
             super(TestBase, self).tearDown()
 
@@ -329,7 +340,7 @@ class TestBase(fixtures.BaseTestFixture):
             self.block_data = block_data
         else:
             self.block_data = os.urandom(size)
-        self.blockid = sha.new(self.block_data).hexdigest()
+        self.blockid = hashlib.new('sha1', self.block_data).hexdigest()
         self.blocks.append(Block(Id=self.blockid, Data=self.block_data))
 
     def _upload_block(self, block_data=None, size=30720):
